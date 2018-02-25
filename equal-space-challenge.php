@@ -2,7 +2,7 @@
 /*
 Plugin name: Equal Space Challenge Contact Form 7 Database
 Description: A Modified version of CFDB7 to store the Equal Space Challenge Data.
-Text Domain: contact-form-cfdb7
+Text Domain: equalspace-challenge
 Version: 0.0.1
 */
 
@@ -184,8 +184,8 @@ function cfdb7_admin_notice() {
 
         echo '<div class="updated"><p>';
 
-        printf(__('Awesome, you\'ve been using <a href="admin.php?page=cfdb7-list.php">Contact Form CFDB7</a> for more than 1 week. May we ask you to give it a 5-star rating on WordPress? | <a href="%2$s" target="_blank">Ok, you deserved it</a> | <a href="%1$s">I already did</a> | <a href="%1$s">No, not good enough</a>'), '?cfdb7-ignore-notice=0',
-        'https://wordpress.org/plugins/contact-form-cfdb7/');
+      //  printf(__('Awesome, you\'ve been using <a href="admin.php?page=cfdb7-list.php">Contact Form CFDB7</a> for more than 1 week. May we ask you to give it a 5-star rating on WordPress? | <a href="%2$s" target="_blank">Ok, you deserved it</a> | <a href="%1$s">I already did</a> | <a href="%1$s">No, not good enough</a>'), '?cfdb7-ignore-notice=0',
+        //'https://wordpress.org/plugins/contact-form-cfdb7/');
         echo "</p></div>";
     }
 }
@@ -222,8 +222,8 @@ add_action( 'admin_menu', 'register_menu_page' );
 function register_menu_page() {
   // add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
     add_menu_page( '#EqualSpace Challenge', '#EqualSpace', 'manage_options', __FILE__, '/challenge', 'equalspace_challenge',10 );
-    add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options', __FILE__.'/voting', 'equalspace_voting');
-    add_submenu_page(__FILE__, 'Entries', 'Entries', 'manage_options', __FILE__.'/entries', 'equalspace_entries');
+    add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options','cfdb7-list.php&fid=4763', 'equalspace_voting');
+    add_submenu_page(__FILE__, 'Entries', 'Entries', 'manage_options', 'cfdb7-list.php&fid=5', 'equalspace_entries');
 }
 function equalspace_challenge(){
     print "#equalspace_challenge";
