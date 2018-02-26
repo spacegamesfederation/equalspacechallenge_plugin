@@ -88,10 +88,28 @@ class CFDB7_List_Table extends WP_List_Table
 
         $cfdb        = apply_filters( 'cfdb7_database', $wpdb );
         $table_name  = $cfdb->prefix.'db7_forms';
-        $columns     = $this->get_columns();
-        $hidden      = $this->get_hidden_columns();
-        $sortable    = $this->get_sortable_columns();
-        $data        = $this->table_data();
+
+        if(@$_GET['fid'] == 5){ // hack for entries
+            $columns     = $this->get_entries();
+            $hidden      = $this->get_hidden_columns();
+            $sortable    = $this->get_sortable_columns();
+            $data        = $this->table_entries();
+       
+        } else if ($_GET['fid'] == 4763 ){ // hack for voting
+           $columns     = $this->get_votes();
+            $hidden      = $this->get_hidden_columns();
+            $sortable    = $this->get_sortable_columns();
+            $data        = $this->table_voting();
+            
+        } else { // original
+            $columns     = $this->get_columns();
+            $hidden      = $this->get_hidden_columns();
+            $sortable    = $this->get_sortable_columns();
+            $data        = $this->table_data();
+        }
+        
+
+        
 
         //usort( $data, array( &$this, 'sort_data' ) );
 
@@ -148,6 +166,80 @@ class CFDB7_List_Table extends WP_List_Table
 
         return $columns;
     }
+// Special display for entries columns
+ public function get_entries()
+    {
+        $form_post_id  = $this->form_post_id;
+
+        global $wpdb;
+        $cfdb          = apply_filters( 'cfdb7_database', $wpdb );
+        $table_name = $cfdb->prefix.'db7_forms';
+
+        $results    = $cfdb->get_results( "SELECT * FROM $table_name WHERE form_post_id = $form_post_id LIMIT 1", OBJECT );
+
+        $first_row  = isset($results[0]) ? unserialize( $results[0]->form_value ): 0 ;
+        $columns    = array();
+
+        if( !empty($first_row) ){
+            $columns['form_id'] = $results[0]->form_id;
+            $columns['cb']      = '<input type="checkbox" />';
+            foreach ($first_row as $key => $value) {
+
+                if ( $key == 'cfdb7_status' ) continue;
+                //print $key;
+                $key_val       = str_replace( array('your-', 'cfdb7_file'), '', $key);
+              //  $columns[$key] = ucfirst( $key_val );
+
+            //    if ( sizeof($columns) > 4) break;
+            }
+            $columns['game_name'] = 'Game Name';
+
+
+            //$columns['form-date'] = 'Date';
+        }
+
+
+        return $columns;
+    }
+    // Special display for votes
+ public function get_votes()
+    {
+        $form_post_id  = $this->form_post_id;
+
+        global $wpdb;
+        $cfdb          = apply_filters( 'cfdb7_database', $wpdb );
+        $table_name = $cfdb->prefix.'db7_forms';
+
+        $results    = $cfdb->get_results( "SELECT * FROM $table_name WHERE form_post_id = $form_post_id LIMIT 1", OBJECT );
+
+        $first_row  = isset($results[0]) ? unserialize( $results[0]->form_value ): 0 ;
+        $columns    = array();
+
+        if( !empty($first_row) ){
+            $columns['form_id'] = $results[0]->form_id;
+            $columns['cb']      = '<input type="checkbox" />';
+            $columns['tallied']      = 'Tallied';
+            
+            foreach ($first_row as $key => $value) {
+
+                if ( $key == 'cfdb7_status' ) continue;
+
+                $key_val       = str_replace( array('your-', 'cfdb7_file'), '', $key);
+               $columns[$key] = ucfirst( $key_val );
+
+              if ( sizeof($columns) > 4) break;
+            }
+          //  $columns[''];
+            //$columns['form-date'] = 'Date';
+        }
+
+
+        return $columns;
+    }
+
+
+
+
     /**
      * Define check box for bulk action (each row)
      * @param  $item
@@ -264,6 +356,222 @@ class CFDB7_List_Table extends WP_List_Table
 
         return $data;
     }
+
+
+ private function table_entries()
+    {
+        $data = array();
+        global $wpdb;
+        $cfdb         = apply_filters( 'cfdb7_database', $wpdb );
+        $search       = empty( $_REQUEST['s'] ) ? false :  esc_sql( $_POST['s'] );
+        $table_name   = $cfdb->prefix.'db7_forms';
+        $page         = $this->get_pagenum();
+        $page         = $page - 1;
+        $start        = $page * 100;
+        $form_post_id = $this->form_post_id;
+
+        $orderby = isset($_GET['orderby']) ? 'form_date' : 'form_id';
+        $order   = isset($_GET['order']) ? $_GET['order'] : 'desc';
+        $order   = esc_sql($order);
+
+        if ( ! empty($search) ) {
+
+           $results = $cfdb->get_results( "SELECT * FROM $table_name WHERE  form_value LIKE '%$search%'
+           AND form_post_id = '$form_post_id'
+           ORDER BY $orderby $order
+           LIMIT $start,100", OBJECT );
+        }else{
+
+            $results = $cfdb->get_results( "SELECT * FROM $table_name WHERE form_post_id = $form_post_id
+            ORDER BY $orderby $order
+            LIMIT $start,100", OBJECT );
+        }
+
+        foreach ( $results as $result ) {
+
+            $form_value = unserialize( $result->form_value );
+
+            $link  = "<b><a href=admin.php?page=cfdb7-list.php&fid=%s&ufid=%s>%s</a></b>";
+            if(isset($form_value['cfdb7_status']) && ( $form_value['cfdb7_status'] === 'read' ) )
+                $link  = "<a href=admin.php?page=cfdb7-list.php&fid=%s&ufid=%s>%s</a>";
+
+
+
+            $fid   = $result->form_post_id;
+            $form_values['form_id'] = $result->form_id;
+
+            foreach ($form_value as $k => $value) {
+
+                $ktmp = $k;
+
+                $can_foreach = is_array($value) || is_object($value);
+
+                if ( $can_foreach ) {
+
+                    foreach ($value as $k_val => $val):
+
+                        $form_values[$ktmp] = ( strlen($val) > 150 ) ? substr($val, 0, 150).'...': $val;
+                        $form_values[$ktmp] = sprintf($link, $fid, $result->form_id, $form_values[$ktmp]);
+
+                    endforeach;
+                }else{
+                   $form_values[$ktmp] = ( strlen($value) > 150 ) ? substr($value, 0, 150).'...': $value;
+                   $form_values[$ktmp] = sprintf($link, $fid, $result->form_id, $form_values[$ktmp]);
+                }
+
+            }
+            $form_values['form-date'] = sprintf($link, $fid, $result->form_id, $result->form_date );
+            $data[] = $form_values;
+        }
+
+        return $data;
+    }
+
+
+
+
+
+ private function table_voting()
+    {
+        $data = array();
+        $ranking_data = array();
+        global $wpdb;
+        $cfdb         = apply_filters( 'cfdb7_database', $wpdb );
+        $search       = empty( $_REQUEST['s'] ) ? false :  esc_sql( $_POST['s'] );
+        $table_name   = $cfdb->prefix.'db7_forms';
+        $page         = $this->get_pagenum();
+        $page         = $page - 1;
+        $start        = $page * 100;
+        $form_post_id = $this->form_post_id;
+
+        $orderby = isset($_GET['orderby']) ? 'form_date' : 'form_id';
+        $order   = isset($_GET['order']) ? $_GET['order'] : 'desc';
+        $order   = esc_sql($order);
+
+        if ( ! empty($search) ) {
+
+           $results = $cfdb->get_results( "SELECT * FROM $table_name WHERE  form_value LIKE '%$search%'
+           AND form_post_id = '$form_post_id'
+           ORDER BY $orderby $order
+           LIMIT $start,100", OBJECT );
+        }else{
+
+            $results = $cfdb->get_results( "SELECT * FROM $table_name WHERE form_post_id = $form_post_id
+            ORDER BY $orderby $order
+            LIMIT $start,100", OBJECT );
+        }
+
+        foreach ( $results as $result ) {
+
+            $form_value = unserialize( $result->form_value );
+
+            $link  = "<b><a href=admin.php?page=cfdb7-list.php&fid=%s&ufid=%s>%s</a></b>";
+            if(isset($form_value['cfdb7_status']) && ( $form_value['cfdb7_status'] === 'read' ) )
+                $link  = "<a href=admin.php?page=cfdb7-list.php&fid=%s&ufid=%s>%s</a>";
+
+
+
+            $fid   = $result->form_post_id;
+            $form_values['form_id'] = $result->form_id;
+
+            foreach ($form_value as $k => $value) {
+
+                $ktmp = $k;
+
+                $can_foreach = is_array($value) || is_object($value);
+
+                if ( $can_foreach ) {
+
+                    foreach ($value as $k_val => $val):
+
+                        $form_values[$ktmp] = ( strlen($val) > 150 ) ? substr($val, 0, 150).'...': $val;
+                        $form_values[$ktmp] = sprintf($link, $fid, $result->form_id, $form_values[$ktmp]);
+
+                    endforeach;
+                }else{
+                   $form_values[$ktmp] = ( strlen($value) > 150 ) ? substr($value, 0, 150).'...': $value;
+                   $form_values[$ktmp] = sprintf($link, $fid, $result->form_id, $form_values[$ktmp]);
+                }
+
+            }
+            $form_values['form-date'] = sprintf($link, $fid, $result->form_id, $result->form_date );
+
+            $form_values['tallied'] = '✓';
+            array_push($ranking_data, $form_value['vote_data']);
+            $data[] = $form_values;
+        }
+        print $this->vote_tally($ranking_data);
+       
+        return $data;
+    }
+
+
+ private function vote_tally($ranking_data)    {
+
+        $list = array();
+        foreach ($ranking_data as $key => $value) { //loops through all the votes
+
+            $ranking = json_decode(urldecode($value)); //decodes the ranking data;
+
+            if($key == 0){// build a master list on first iteration
+                foreach($ranking as $rank => $entry){ // loop through the list of entries
+               
+                    $list[$entry->id] = array(// build array with id as key
+                        "name"=>$ranking[$rank]->name,// set name
+                        "points"=>0);// set points to zero
+               }
+            }
+
+            foreach($ranking as $rank => $entry){ // loop through the list of entries
+
+                $list[$entry->id]['points'] = $list[$entry->id]['points']+ $entry->points;// build array with id as key
+            }
+
+
+           
+
+
+
+
+        }
+        $sort_list = array();
+        foreach($list as $key => $ranking){
+            array_push($sort_list,array("id"=>$key,"name"=>$ranking['name'],"points"=>$ranking['points']));
+        }
+
+
+         usort($sort_list,function($a,$b){
+            return ($a['points'] >= $b['points']) ? -1 : 1;
+        });
+
+        
+       
+    
+
+        return $this->standings($sort_list);
+    }
+
+    function sort_points($a, $b) {
+        var_dump($a);
+       return $a['points'] - $b['points'];
+    }
+
+    
+    public function standings($ranked_list){
+
+        ob_start();
+        print "<h3>Standings</h3>";
+        print "<ol>";
+
+        foreach ($ranked_list as $key => $value) {
+            print "<li>".$value['name']." (".$value['points'].")</li>";
+        }
+
+        print "</ol>";
+        return ob_get_clean();
+    }
+
+
     /**
      * Define bulk action
      *

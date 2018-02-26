@@ -84,6 +84,19 @@ function cfdb7_before_send_mail( $form_tag ) {
         $form_data   = array();
 
         $form_data['cfdb7_status'] = 'unread';
+
+        if(@$form_data['your_email']){
+          $email = $form_data['your_email'];//hack to test for unique email sets value from form data;
+            $rowcount = $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE form_post_id = $form_post_id AND email = '$email'");//checks data
+
+            if($rowcount>0){//email already there for this record;
+ 
+                    //HACK needs to safeguard against duplicate entry, does not work yet.
+                return;
+            }
+
+        }
+
         foreach ($data as $key => $d) {
             if ( !in_array($key, $black_list ) && !in_array($key, $uploaded_files ) ) {
 
@@ -116,7 +129,9 @@ function cfdb7_before_send_mail( $form_tag ) {
         $cfdb->insert( $table_name, array(
             'form_post_id' => $form_post_id,
             'form_value'   => $form_value,
-            'form_date'    => $form_date
+            'form_date'    => $form_date,
+            'email'    => trim($email)
+            
         ) );
 
         /* cfdb7 after save data */
@@ -222,7 +237,12 @@ add_action( 'admin_menu', 'register_menu_page' );
 function register_menu_page() {
   // add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
     add_menu_page( '#EqualSpace Challenge', '#EqualSpace', 'manage_options', __FILE__, '/challenge', 'equalspace_challenge',10 );
+    
+
+    //this is the direct path to the voting list, the fid must be pointed to the correct form
     add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options','cfdb7-list.php&fid=4763', 'equalspace_voting');
+
+    //this is the direct path to the inbound entries, the fid must be pointed to the correct form
     add_submenu_page(__FILE__, 'Entries', 'Entries', 'manage_options', 'cfdb7-list.php&fid=5', 'equalspace_entries');
 }
 function equalspace_challenge(){
