@@ -534,41 +534,41 @@ class CFDB7_List_Table extends WP_List_Table
 
 
         }
-        $sort_list = array();
-        foreach($list as $key => $ranking){
+        $sort_list = array();// new array for sorting
+        foreach($list as $key => $ranking){ // build array with keys
             array_push($sort_list,array("id"=>$key,"name"=>$ranking['name'],"points"=>$ranking['points']));
         }
 
 
-         usort($sort_list,function($a,$b){
-            return ($a['points'] >= $b['points']) ? -1 : 1;
+         usort($sort_list,function($a,$b){// sort by points decending
+            return ($a['points'] >= $b['points']) ? -1 : 1;// this does the sorting
         });
 
         
        
     
 
-        return $this->standings($sort_list);
+        return $this->standings($sort_list);// passes the sorted list into standing.
     }
 
-    function sort_points($a, $b) {
-        var_dump($a);
-       return $a['points'] - $b['points'];
-    }
+   
 
     
     public function standings($ranked_list){
 
-        ob_start();
-        print "<h3>Standings</h3>";
-        print "<ol>";
+        ob_start();// this is the content that that gets printed about list of form entries on the equal space page.
+        print "<h3>#EqualSpace Challenge Entry Standings</h3>";//header
+        print '<ol style="background-color:#fff;padding-left:35px;">';//begin list
 
-        foreach ($ranked_list as $key => $value) {
-            print "<li>".$value['name']." (".$value['points'].")</li>";
+        foreach ($ranked_list as $key => $value) {// loop through entries sorted by points desc.
+            print "<li>".$value['name']." (score: ".$value['points'].")</li>";//display entries with scor
         }
 
         print "</ol>";
-        return ob_get_clean();
+        //explanation
+        print "<p><strong>Rankings Explained</strong> when a judge submits a ranking, the top ranked gets the number of points as long as the lenght of the list of entries at the time it is submitted. The points are attributed to the unique entry and the points accrued are added together to create the score. The list is then sorted by the number of points</p><h4>";
+
+        return ob_get_clean();// returns above text
     }
 
 

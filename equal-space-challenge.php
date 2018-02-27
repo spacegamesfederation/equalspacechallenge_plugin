@@ -29,7 +29,7 @@ function cfdb7_create_table(){
     }
 
     $upload_dir    = wp_upload_dir();
-    $cfdb7_dirname = $upload_dir['basedir'].'/cfdb7_uploads';
+    $cfdb7_dirname = $upload_dir['basedir'].'/equalspace_uploads';
     if ( ! file_exists( $cfdb7_dirname ) ) {
         wp_mkdir_p( $cfdb7_dirname );
     }
@@ -61,7 +61,7 @@ function cfdb7_before_send_mail( $form_tag ) {
     $cfdb          = apply_filters( 'cfdb7_database', $wpdb );
     $table_name    = $cfdb->prefix.'db7_forms';
     $upload_dir    = wp_upload_dir();
-    $cfdb7_dirname = $upload_dir['basedir'].'/cfdb7_uploads';
+    $cfdb7_dirname = $upload_dir['basedir'].'/equalspace_uploads';
     $time_now      = time();
 
     $form = WPCF7_Submission::get_instance();
@@ -236,21 +236,65 @@ add_filter("plugin_action_links_$plugin", 'cfdb7_settings_link' );
 add_action( 'admin_menu', 'register_menu_page' );
 function register_menu_page() {
   // add_menu_page( $page_title, $menu_title, $capability, $menu_slug, $function, $icon_url, $position );
-    add_menu_page( '#EqualSpace Challenge', '#EqualSpace', 'manage_options', __FILE__, '/challenge', 'equalspace_challenge',10 );
+    add_menu_page( '#EqualSpace Challenge', '#EqualSpace', 'manage_options', __FILE__, '', '',1,plugins_url( 'equal-space-challenge/sgf.png' ) );
     
-
-    //this is the direct path to the voting list, the fid must be pointed to the correct form
-    add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options','cfdb7-list.php&fid=4763', 'equalspace_voting');
-
+/*
+    add_menu_page( 
+        __( '#EqualSpace Challenge', 'equal-space-challenge' ),
+        '#EqualSpace',
+        'manage_options',
+        '__FILE__',
+        'equalspace_challenge',
+        plugins_url( 'equal-space-challenge/equalspace.svg' ),
+        6
+    ); */
     //this is the direct path to the inbound entries, the fid must be pointed to the correct form
-    add_submenu_page(__FILE__, 'Entries', 'Entries', 'manage_options', 'cfdb7-list.php&fid=5', 'equalspace_entries');
+    add_submenu_page(__FILE__, 'Entries', 'New Entries', 'manage_options', 'cfdb7-list.php&fid=5', 'equalspace_entries');
+     //this is the direct path to the approved entries, directed to the entry content type
+    add_submenu_page(__FILE__, 'Entries', 'Approved Entries', 'manage_options', '/edit.php&post_type=entry', 'equalspace_entries');
+    //this is the direct path to the voting list, the fid must be pointed to the correct form
+   add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options','cfdb7-list.php&fid=4763', 'equalspace_voting');
+
+ 
 }
-function equalspace_challenge(){
-    print "#equalspace_challenge";
-}
-function equalspace_voting(){
-    print "voting";
-}
-function equalspace_entries(){
-    print "entries";
+/* THIS CREATES THE METABOX IN ENTRIES TO EDIT CUSTOM FIELDS */
+
+function challenge_meta_box( $meta_boxes ) {
+    $prefix = 'challenge';
+
+    $meta_boxes[] = array(
+        'id' => 'challenge',
+        'title' => esc_html__( '#EqualSpace Challenge', 'challenge-info' ),
+        'post_types' => array( 'entry' ),
+        'context' => 'advanced',
+        'priority' => 'default',
+        'autosave' => false,
+        'fields' => array(
+            
+            
+            array(
+                'id' => $prefix . '_video',
+                'type' => 'text',
+                'name' => esc_html__( 'VideoURL', 'challenge_video' ),
+                'desc' => esc_html__( 'USE EMBED VERSION
+                    youtube.com/embed/~video id~
+                    player.vimeo.com/video/~video_id~
+                    Test Before submitting', 'challenge_video' ),
+                'placeholder' => esc_html__( '', 'embed video url' ),
+                'size' => 25,
+            ), array(
+                'id' => $prefix . 'rs',
+                'type' => 'text',
+                'name' => esc_html__( 'Challengers', 'Challengers' ),
+                'desc' => esc_html__( 'Names', 'challengers' ),
+                'placeholder' => esc_html__( '', '' ),
+                'size' => 25,
+            )
+
+
+
+        ),
+    );
+
+    return $meta_boxes;
 }
