@@ -15,7 +15,7 @@ class CFdb7_Form_Details
     {
        $this->form_post_id = esc_sql( $_GET['fid'] );
        $this->form_id = esc_sql( $_GET['ufid'] );
-
+        $this->$table_name    = $cfdb->prefix.'db7_forms';
        $this->form_details_page();
     }
 
@@ -132,8 +132,9 @@ class CFdb7_Form_Details
                         <a href="admin.php?page=cfdb7-list.php&fid=<?=@$_GET['fid']?>&ufid=<?=@$_GET['ufid']?>&approved=1">Approve</a>
                 <?php 
                       if(@$_GET['approved']){
+
                         print $this->tap_form_data($form_data);
-                        }
+                    }
                         $form_data['cfdb7_status'] = 'read';
                         $form_data = serialize( $form_data );
                         $form_id = $results[0]->form_id;
@@ -192,7 +193,7 @@ class CFdb7_Form_Details
 
                         endforeach;
                     
-                        print $this->tap_form_data($form_data);
+                      
 
                         $form_data['cfdb7_status'] = 'read';
                         $form_data = serialize( $form_data );
@@ -333,6 +334,7 @@ class CFdb7_Form_Details
         return ob_get_clean();
 
     } 
+
     public function voting(){
 
     }
@@ -346,13 +348,57 @@ class CFdb7_Form_Details
     $description = $form_data['game_desc'];
     $excerpt = @$form_data['game_summary'];
 
+    $last_post_id = $wpdb->get_var("select max(ID) as last_key from wp_posts");
+    $last_title = $wpdb->get_var("select post_title from wp_posts where ID = $last_post_id");
+    $next_post_id = intval($last_post_id)+1;
 
 
-      $insert_post = "INSERT INTO `wp_posts` ( `post_author`, `post_date`, `post_date_gmt`, `post_content`, `post_title`, `post_excerpt`, `post_status`, `comment_status`, `ping_status`, `post_password`, `post_name`, `to_ping`, `pinged`, `post_modified`, `post_modified_gmt`, `post_content_filtered`, `post_parent`, `guid`, `menu_order`, `post_type`, `post_mime_type`, `comment_count`) VALUES ";
- $insert_post .= "( 1, '$timestamp', '$timestamp', '$description', '$title', '$excerpt', 'publish', 'closed', 'closed', '', '$slug', '', '', '$timestamp', '$timestamp', '', 0, '?post_type=entry&#038;p=', 0, 'entry', '', 0)";
-//print $insert_post;
-       //$wdpb->query($insert_post);
-             
+      $insert_post = "INSERT ignore INTO `wp_posts` (ID, `post_author`, `post_date`, `post_date_gmt`, `post_content`, `post_title`, `post_excerpt`, `post_status`, `comment_status`, `ping_status`, `post_password`, `post_name`, `to_ping`, `pinged`, `post_modified`, `post_modified_gmt`, `post_content_filtered`, `post_parent`, `guid`, `menu_order`, `post_type`, `post_mime_type`, `comment_count`) VALUES ";
+ $insert_post .= "(0, 1, '$timestamp', '$timestamp', '$description', '$title', '$excerpt', 'publish', 'closed', 'closed', '', '$slug', '', '', '$timestamp', '$timestamp', '', 0, '?post_type=entry&#038;p=', 0, 'entry', '', 0)";
+
+//wp_insert_post($insert_post);
+///print $insert_post;
+//$wpdb->query( $wpdb->prepare($insert_post,"ID"));
+
+    if($title != $last_title){ // hack to prevent duplicate entry if title is same as last insert.
+
+
+     print  $new_id = wp_insert_post(array(
+       
+            'post_author'=>1,
+            'post_date'=>"$timestamp",
+            'post_date_gmt'=>"$timestamp",
+            'post_content'=>"$description",
+            'post_title'=>"$title",
+            'post_excerpt'=>"$excerpt",
+            'post_status'=>'publish',
+            'comment_status'=>'closed',
+            'ping_status'=>'closed',
+            'post_password'=>'',
+            'post_name'=>"$slug",
+            'to_ping'=>'',
+            'pinged'=>'',
+            'post_modified'=>"$timestamp",
+            'post_modified_gmt'=>"$timestamp",
+            'post_content_filtered'=>'',
+            'post_parent'=>'0',
+            'guid'=>'?post_type=entry&#038;p=',
+            'menu_order'=>0,
+            'post_type'=>'entry',
+            'post_mime_type'=>'',
+            'comment_count'=>0
+            )
+        );
+
+     $wpdb->query("update wp_posts set guid = '?post_type=entry&#038;p=$new_id' where ID= $new_id");
+    //$wpdb->query("delete from $this->table_name where ID= $_GET[ufid]");
+
+
+
+
+    }
+           /*  */
+
 
     ?>
 
