@@ -251,7 +251,7 @@ function register_menu_page() {
     //this is the direct path to the inbound entries, the fid must be pointed to the correct form
     add_submenu_page(__FILE__, 'Entries', 'New Entries', 'manage_options', 'cfdb7-list.php&fid=5', 'equalspace_entries');
      //this is the direct path to the approved entries, directed to the entry content type
-    add_submenu_page(__FILE__, 'Entries', 'Approved Entries', 'manage_options', '/edit.php&post_type=entry', 'equalspace_entries');
+ //   add_submenu_page(__FILE__, 'Entries', 'Approved Entries', 'manage_options', '/edit.php&post_type=entry', 'equalspace_entries');
     //this is the direct path to the voting list, the fid must be pointed to the correct form
    add_submenu_page(__FILE__, 'Voting', 'Voting', 'manage_options','cfdb7-list.php&fid=4763', 'equalspace_voting');
 
@@ -298,3 +298,4 @@ function challenge_meta_box( $meta_boxes ) {
 
     return $meta_boxes;
 }
+add_filter( 'rwmb_meta_boxes', 'challenge_meta_box' );

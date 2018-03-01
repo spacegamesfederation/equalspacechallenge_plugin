@@ -15,14 +15,14 @@ class CFdb7_Form_Details
     {
        $this->form_post_id = esc_sql( $_GET['fid'] );
        $this->form_id = esc_sql( $_GET['ufid'] );
-        $this->$table_name    = $cfdb->prefix.'db7_forms';
+       $this->table_name    = 'wp_db7_forms';
        $this->form_details_page();
     }
 
     public function form_details_page(){
         global $wpdb;
         $cfdb          = apply_filters( 'cfdb7_database', $wpdb );
-        $table_name    = $cfdb->prefix.'db7_forms';
+        $table_name    = 'wp_db7_forms';
         $upload_dir    = wp_upload_dir();
         $cfdb7_dir_url = $upload_dir['baseurl'].'/equalspace_uploads';
 
@@ -90,7 +90,12 @@ class CFdb7_Form_Details
                             <tr>
                                 <th>Team</th>
                                 <td>
-                                <?=$team_data['challengers'];?>
+                                    <?php
+
+                                    $form_data['team_data'] = $team_data;
+                                    $form_data['challengers'] = $team_data['challengers'];
+                                    //var_dump($team_data);?>
+                                <?=$challengers?>
 
                                 
 
@@ -112,7 +117,7 @@ class CFdb7_Form_Details
                             <tr>
                                 <th>Thumbnail</th>
                                 <td>
-                                    <img src="<?=$cfdb7_dir_url?>/<?=$form_data['uploadthumbnailcfdb7_file']?>">
+                                    <img src="<?=$cfdb7_dir_url?>/<?=$form_data['uploadthumbnailcfdb7_file']?>" style="max-width:400px;">
 
                                 </td>
                             </tr>
@@ -131,17 +136,20 @@ class CFdb7_Form_Details
 
                         <a href="admin.php?page=cfdb7-list.php&fid=<?=@$_GET['fid']?>&ufid=<?=@$_GET['ufid']?>&approved=1">Approve</a>
                 <?php 
+                  
                       if(@$_GET['approved']){
 
                         print $this->tap_form_data($form_data);
-                    }
+                   
                         $form_data['cfdb7_status'] = 'read';
                         $form_data = serialize( $form_data );
                         $form_id = $results[0]->form_id;
 
-                        $cfdb->query( "UPDATE $table_name SET form_value =
+                        $cfdb->query( "UPDATE $this->table_name SET form_value =
                             '$form_data' WHERE form_id = $form_id"
                         );
+
+                      }   
                         ?>
 
 
@@ -255,6 +263,7 @@ class CFdb7_Form_Details
         $team = array();
         $team_data = array();
         $challenger_list = array();
+
         if($team_member_0 != ''){
 
             array_push($team,explode("|",
@@ -288,9 +297,9 @@ class CFdb7_Form_Details
       
         $challengers = "";
         if(count($challenger_list) == 1){
-            $challengers .= implode("", $challengers);
+            $challengers .= implode("", $challenger_list[0]);
         } else if(count($challenger_list) == 2){
-            $challengers .= implode(" & ", $challengers);
+            $challengers .= implode("", $challenger_list[0]." & ". $challenger_list[1] );
         } else if(count($challenger_list) > 2){
             
             foreach($challenger_list as $key => $value){
@@ -302,7 +311,7 @@ class CFdb7_Form_Details
                 }
             }
         }
-        
+       // var_dump($challenger_list);
         $team_data['challengers'] = $challengers;
 
 
@@ -340,8 +349,10 @@ class CFdb7_Form_Details
     }
  
     public function newEntry($form_data){
+        // this converts an submitted entry into an approved entry
         global $wpdb;
 
+    // variables for the post_insert.
     $timestamp = date('Y-m-d G:i:s');
     $slug = $this->slugify($form_data['game_name']);
     $title = $form_data['game_name'];
@@ -351,6 +362,7 @@ class CFdb7_Form_Details
     $last_post_id = $wpdb->get_var("select max(ID) as last_key from wp_posts");
     $last_title = $wpdb->get_var("select post_title from wp_posts where ID = $last_post_id");
     $next_post_id = intval($last_post_id)+1;
+   print  $challengers = $form_data['challengers'];
 
 
       $insert_post = "INSERT ignore INTO `wp_posts` (ID, `post_author`, `post_date`, `post_date_gmt`, `post_content`, `post_title`, `post_excerpt`, `post_status`, `comment_status`, `ping_status`, `post_password`, `post_name`, `to_ping`, `pinged`, `post_modified`, `post_modified_gmt`, `post_content_filtered`, `post_parent`, `guid`, `menu_order`, `post_type`, `post_mime_type`, `comment_count`) VALUES ";
@@ -391,7 +403,15 @@ class CFdb7_Form_Details
         );
 
      $wpdb->query("update wp_posts set guid = '?post_type=entry&#038;p=$new_id' where ID= $new_id");
-    //$wpdb->query("delete from $this->table_name where ID= $_GET[ufid]");
+    
+
+
+   $wpdb->insert("wp_postmeta",array(
+        "post_id" => $new_id,
+        "meta_key"=>"challengers",
+        "meta_value"=>$challengers
+
+    ));
 
 
 
